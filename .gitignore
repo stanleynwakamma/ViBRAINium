@@ -1,4 +1,4 @@
-
+venv/
 # Created by https://www.toptal.com/developers/gitignore/api/windows,macos,pycharm,visualstudiocode
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,pycharm,visualstudiocode
 
@@ -45,6 +45,7 @@ Temporary Items
 .idea/**/contentModel.xml
 
 # Sensitive or high-churn files
+.idea/
 .idea/**/dataSources/
 .idea/**/dataSources.ids
 .idea/**/dataSources.local.xml
