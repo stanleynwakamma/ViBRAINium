@@ -1,12 +1,10 @@
 import zbar
 import cv2
-import pymysql 
+#import pymysql 
 import imutils
 from PIL import Image
 import string
 import re
-db=pymysql.connect(host="sql9.freemysqlhosting.net", user="sql9197760", passwd="hwIDaFzRZA", db="sql9197760")
-ex=db.cursor(pymysql.cursors.DictCursor)
 cam=cv2.VideoCapture(0)
 found=False
 chars = re.escape(string.punctuation)
@@ -24,10 +22,10 @@ def CenterText(text,_img,_color):
 def taek(found):
     (_,image) = cam.read() 
     image = imutils.resize(image, width=400) 
-    nimage = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-    nimage = Image.fromarray(nimage)
-    scanner = zbar.Scanner()
-    results = scanner.scan(nimage)
+    #nimage = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+    #nimage = Image.fromarray(nimage)
+    #scanner = zbar.Scanner()
+    results = []# scanner.scan(nimage)
     for result in results:
         if len(results) != 0:
             try:
@@ -37,15 +35,15 @@ def taek(found):
                 cv2.line(image, result.position[3],result.position[0], (0, 0, 255), 4)
             except IndexError:
                 pass
-            if ex.execute("SELECT name FROM allow_ids WHERE passkey = '{0}';".format(re.sub(r'['+chars+']', '',str(result.data.decode("utf-8"))[:10]))):
-                name=ex.fetchall()[0]['name']
-                #Centers the text
-                CenterText("Welcome, {0}".format(name),image,(0,255,0))
-                print(result.data)
-            else:
-                CenterText("ACCESS DENIED",image,(0,0,255))
+            # if ex.execute("SELECT name FROM allow_ids WHERE passkey = '{0}';".format(re.sub(r'['+chars+']', '',str(result.data.decode("utf-8"))[:10]))):
+            #     name=ex.fetchall()[0]['name']
+            #     #Centers the text
+            #     CenterText("Welcome, {0}".format(name),image,(0,255,0))
+            #     print(result.data)
+            # else:
+            #     CenterText("ACCESS DENIED",image,(0,0,255))
     return image,found
-    
+
 while True and found == False:
     key = cv2.waitKey(1) & 0xFF
     img,found = taek(found)
