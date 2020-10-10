@@ -1,6 +1,7 @@
 import asyncio
 import io
 import glob
+import json
 import os
 import sys
 import time
@@ -17,26 +18,37 @@ from azure.cognitiveservices.vision.face.models import TrainingStatusType, Perso
 
 # Set the FACE_SUBSCRIPTION_KEY environment variable with your key as the value.
 # This key will serve all examples in this document.
-KEY = os.environ['FACE_SUBSCRIPTION_KEY']
+subscription_key = 'a9736d41ac634921b6b58ced759ae58f'
+assert subscription_key
 
-# Set the FACE_ENDPOINT environment variable with the endpoint from your Face service in Azure.
-# This endpoint will be used in all examples in this quickstart.
-ENDPOINT = os.environ['FACE_ENDPOINT']
-# Create an authenticated FaceClient.
-face_client = FaceClient(ENDPOINT, CognitiveServicesCredentials(KEY))
+face_api_url = 'https://stanley.cognitiveservices.azure.com' + '/face/v1.0/detect'
+
+#image_url = 'https://raw.githubusercontent.com/Azure-Samples/cognitive-services-sample-data-files/master/ComputerVision/Images/faces.jpg'
+single_face_image_url = 'https://www.biography.com/.image/t_share/MTQ1MzAyNzYzOTgxNTE0NTEz/john-f-kennedy---mini-biography.jpg'
+
+headers = {'Ocp-Apim-Subscription-Key': subscription_key}
+
+params = {
+    'detectionModel': 'detection_01',
+    'returnFaceId': 'true'
+}
+
+response = requests.post(face_api_url, params=params,
+                         headers=headers, json={"url": single_face_image_url})
+print(json.dumps(response.json()))
 
 # Detect a face in an image that contains a single face
 single_face_image_url = 'https://www.biography.com/.image/t_share/MTQ1MzAyNzYzOTgxNTE0NTEz/john-f-kennedy---mini-biography.jpg'
 single_image_name = os.path.basename(single_face_image_url)
 # We use detection model 2 because we are not retrieving attributes.
-detected_faces = face_client.face.detect_with_url(url=single_face_image_url, detectionModel='detection_02')
+detected_faces = face_client.face.detect_with_url(url=single_face_image_url, detectionModel='detection_01')
 if not detected_faces:
     raise Exception('No face detected from image {}'.format(single_image_name))
 
 # Display the detected face ID in the first single-face image.
 # Face IDs are used for comparison to faces (their IDs) detected in other images.
 print('Detected face ID from', single_image_name, ':')
-for face in detected_faces: print (face.face_id)
+for face in detected_faces: print(face.face_id)
 print()
 
 # Save this ID for use in Find Similar
