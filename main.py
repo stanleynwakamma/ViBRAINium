@@ -3,8 +3,17 @@ import cv2
 #import pymysql 
 import imutils
 from PIL import Image
+import string
+import re
 import pymongo 
 
+client = pymongo.MongoClient("mongodb+srv://admin:toor@besmartcluster.2axqx.mongodb.net/?retryWrites=true&w=majority")
+
+cam = cv2.VideoCapture(0)
+found=False
+
+cv2.namedWindow("base-image", cv2.WINDOW_AUTOSIZE) 
+cv2.startWindowThread()
 
 def CenterText(text,_img,_color):
     #Calculates the center of the screen 
@@ -30,7 +39,7 @@ def ScanTags(found):
                 cv2.line(image, result.position[3],result.position[0], (0, 0, 255), 4)
             except IndexError:
                 pass
-            # if ex.execute("SELECT name FROM allow_ids WHERE passkey = '{0}';".format(re.sub(r'['+chars+']', '',str(result.data.decode("utf-8"))[:10]))):
+            for x in mycol.find({},{ "_id": re.sub(r'['+chars+']', '',str(result.data.decode("utf-8"))[:10]))}):
             #     name=ex.fetchall()[0]['name']
             #     #Centers the text
             #     CenterText("Welcome, {0}".format(name),image,(0,255,0))
@@ -38,13 +47,6 @@ def ScanTags(found):
             # else:
             #     CenterText("ACCESS DENIED",image,(0,0,255))
     return image,found
-
-client = pymongo.MongoClient("mongodb+srv://admin:toor@besmartcluster.2axqx.mongodb.net/?retryWrites=true&w=majority")
-
-cam = cv2.VideoCapture(0)
-
-cv2.namedWindow("base-image", cv2.WINDOW_AUTOSIZE) 
-cv2.startWindowThread()
 
 while True and found == False:
     key = cv2.waitKey(1) & 0xFF
