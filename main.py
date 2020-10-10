@@ -1,80 +1,55 @@
-from picamera.array import PiRGBArray
-from picamera import PiCamera
-import time
-import sys
-import cv2
 import zbar
-import Image
+import cv2
+import pymysql 
+import imutils
+from PIL import Image
+import string
+import re
+db=pymysql.connect(host="sql9.freemysqlhosting.net", user="sql9197760", passwd="hwIDaFzRZA", db="sql9197760")
+ex=db.cursor(pymysql.cursors.DictCursor)
+cam=cv2.VideoCapture(0)
+found=False
+chars = re.escape(string.punctuation)
+cv2.namedWindow("base-image", cv2.WINDOW_AUTOSIZE) 
+cv2.startWindowThread()
 
-# Debug mode
-DEBUG = False
-if len(sys.argv) > 1:
-	DEBUG = sys.argv[-1] == 'DEBUG'
+def CenterText(text,_img,_color):
+    #Calculates the center of the screen 
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    textsize = cv2.getTextSize(text, font, 1, 2)[0]
+    testX = (_img.shape[1] - textsize[0]) / 2
+    testY = (_img.shape[0] + textsize[1]) / 2
+    cv2.putText(_img,text, (int(testX),int(testY)), font, 1,color=_color,thickness=6)
 
-# Configuration options
-FULLSCREEN = not DEBUG
-if not DEBUG:
-    RESOLUTION = (640, 480)
-else:
-	RESOLUTION = (480, 270)
-
-# Initialise Raspberry Pi camera
-camera = PiCamera()
-camera.resolution = RESOLUTION
-#camera.framerate = 10
-#camera.vflip = True
-#camera.hflip = True
-#camera.color_effects = (128, 128)
-# set up stream buffer
-rawCapture = PiRGBArray(camera, size=RESOLUTION)
-# allow camera to warm up
-time.sleep(0.1)
-print ("PiCamera ready")
-
-# Initialise OpenCV window
-if FULLSCREEN:
-	cv2.namedWindow("#iothack15", cv2.WND_PROP_FULLSCREEN)
-	cv2.setWindowProperty("#iothack15", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN)
-else:
-	cv2.namedWindow("#iothack15")
-
-print( "OpenCV version: %s" % (cv2.__version__))
-print ("Press q to exit ...")
-
-scanner = zbar.ImageScanner()
-scanner.parse_config('enable')
-
-# Capture frames from the camera
-for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-    # as raw NumPy array
-    output = frame.array.copy()
-
-    # raw detection code
-    gray = cv2.cvtColor(output, cv2.COLOR_BGR2GRAY, dstCn=0)
-    pil = Image.fromarray(gray)
-    width, height = pil.size
-    raw = pil.tostring()
-
-    # create a reader
-    image = zbar.Image(width, height, 'Y800', raw)
-    scanner.scan(image)
-
-    # extract results
-    for symbol in image:
-        # do something useful with results
-        print ('decoded', symbol.type, 'symbol', '"%s"' % symbol.data)
-
-    # show the frame
-    cv2.imshow("#iothack15", output)
-
-    # clear stream for next frame
-    rawCapture.truncate(0)
-
-    # Wait for the magic key
-    keypress = cv2.waitKey(1) & 0xFF
-    if keypress == ord('q'):
-    	break
-
-# When everything is done, release the capture
-camera.close()
-cv2.destroyAllWindows()
+def taek(found):
+    (_,image) = cam.read() 
+    image = imutils.resize(image, width=400) 
+    nimage = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+    nimage = Image.fromarray(nimage)
+    scanner = zbar.Scanner()
+    results = scanner.scan(nimage)
+    for result in results:
+        if len(results) != 0:
+            try:
+                cv2.line(image, result.position[0],result.position[1], (0, 0, 255), 4)
+                cv2.line(image, result.position[1],result.position[2], (0, 0, 255), 4)
+                cv2.line(image, result.position[2],result.position[3], (0, 0, 255), 4)
+                cv2.line(image, result.position[3],result.position[0], (0, 0, 255), 4)
+            except IndexError:
+                pass
+            if ex.execute("SELECT name FROM allow_ids WHERE passkey = '{0}';".format(re.sub(r'['+chars+']', '',str(result.data.decode("utf-8"))[:10]))):
+                name=ex.fetchall()[0]['name']
+                #Centers the text
+                CenterText("Welcome, {0}".format(name),image,(0,255,0))
+                print(result.data)
+            else:
+                CenterText("ACCESS DENIED",image,(0,0,255))
+    return image,found
+    
+while True and found == False:
+    key = cv2.waitKey(1) & 0xFF
+    img,found = taek(found)
+    cv2.imshow("base-image",img)
+    if key == ord("q"):
+        break
+cam.release()
